@@ -1,0 +1,24 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Cache directories
+.cache/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local databases and runtime data
+data/*.db
+data/*.db-journal
+data/reviews.db
+
+# Environment and secrets
+.env
+*.local
+
+# IDE
+.vscode/
+.idea/
