@@ -6,6 +6,8 @@
     <title>AI Code Review & Bug Detection System</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for Rich AI Insights Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,6 +91,7 @@
                 <div class="flex items-center gap-2">
                     <label class="text-xs font-medium text-slate-400">Sample:</label>
                     <select id="sampleSelect" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="" disabled selected>⚡ Load Sample Code...</option>
                         <option value="python">Python (SQLi & Buggy)</option>
                         <option value="javascript">JavaScript (XSS & Eval)</option>
                         <option value="java">Java (SQLi & Leaks)</option>
@@ -122,7 +125,7 @@
 
                 <!-- Textarea Editor Area -->
                 <div class="flex flex-1 relative bg-slate-950">
-                    <div id="lineNumbers" class="select-none py-3.5 pl-3 pr-2 font-mono text-xs text-slate-600 text-right min-w-[3rem] bg-slate-950 border-r border-slate-900 pointer-events-none whitespace-pre leading-[1.6]">1</div>
+                    <div id="lineNumbers" class="select-none py-3.5 pl-3 pr-2 font-mono text-xs text-slate-600 text-right min-w-[3rem] bg-slate-950 border-r border-slate-900 pointer-events-none whitespace-pre leading-[1.6] overflow-hidden">1</div>
                     <textarea id="codeInput" class="code-textarea flex-1 p-3.5 focus:outline-none" spellcheck="false" placeholder="Paste your source code here or upload a file to start automated review..."></textarea>
                 </div>
             </div>
@@ -402,7 +405,7 @@
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">🕒 Code Audit History</h3>
                 <button onclick="closeModal('historyDrawer')" class="text-slate-400 hover:text-white">✕</button>
             </div>
-            <p class="text-xs text-slate-400">Past code analyses stored locally in SQLite database on D: drive.</p>
+            <p class="text-xs text-slate-400">Past code analyses stored locally in SQLite database (data/reviews.db).</p>
             <div id="historyListContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
                 <!-- Populated by JS -->
             </div>

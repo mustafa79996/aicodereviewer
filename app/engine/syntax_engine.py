@@ -317,8 +317,10 @@ class SyntaxEngine:
         issues: List[CodeIssue] = []
 
         # Step 1: Real AST parse
+        parsed_ok = False
         try:
             ast.parse(code, filename=filename or "<input>")
+            parsed_ok = True
         except (SyntaxError, IndentationError, TabError) as e:
             issues.append(self._create_syntax_issue(
                 code=code,
@@ -331,40 +333,43 @@ class SyntaxEngine:
             ))
 
         # Step 2: Multi-pass check for missing colons on definition/control lines
-        lines = code.splitlines()
-        block_keywords = [
-            r'^\s*def\s+[a-zA-Z0-9_]+\s*\(.*?\)',
-            r'^\s*async\s+def\s+[a-zA-Z0-9_]+\s*\(.*?\)',
-            r'^\s*class\s+[a-zA-Z0-9_]+(\(.*?\))?',
-            r'^\s*if\s+.+',
-            r'^\s*elif\s+.+',
-            r'^\s*else\s*$',
-            r'^\s*for\s+.+\s+in\s+.+',
-            r'^\s*while\s+.+',
-            r'^\s*try\s*$',
-            r'^\s*except(\s+.*)?$',
-            r'^\s*finally\s*$',
-            r'^\s*with\s+.+'
-        ]
+        # Only inspect if syntax parsing failed to prevent false positives on valid inline statements
+        if not parsed_ok:
+            lines = code.splitlines()
+            block_keywords = [
+                r'^\s*def\s+[a-zA-Z0-9_]+\s*\(.*?\)',
+                r'^\s*async\s+def\s+[a-zA-Z0-9_]+\s*\(.*?\)',
+                r'^\s*class\s+[a-zA-Z0-9_]+(\(.*?\))?',
+                r'^\s*if\s+.+',
+                r'^\s*elif\s+.+',
+                r'^\s*else\s*$',
+                r'^\s*for\s+.+\s+in\s+.+',
+                r'^\s*while\s+.+',
+                r'^\s*try\s*$',
+                r'^\s*except(\s+.*)?$',
+                r'^\s*finally\s*$',
+                r'^\s*with\s+.+'
+            ]
 
-        for idx, line in enumerate(lines, 1):
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#"):
-                continue
+            for idx, line in enumerate(lines, 1):
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
 
-            for pattern in block_keywords:
-                if re.match(pattern, stripped):
-                    if not stripped.endswith(":"):
-                        issues.append(self._create_syntax_issue(
-                            code=code,
-                            rule_id="SYNTAX-PY-COLON",
-                            title=f"Missing Colon ':' at End of Statement",
-                            description=f"Python block statement '{stripped[:40]}' must terminate with a colon ':'.",
-                            line_number=idx,
-                            column_number=len(line) + 1,
-                            suggestion="Append ':' to the end of the header line."
-                        ))
-                    break
+                for pattern in block_keywords:
+                    if re.match(pattern, stripped):
+                        code_part = stripped.split("#")[0].rstrip()
+                        if ":" not in code_part:
+                            issues.append(self._create_syntax_issue(
+                                code=code,
+                                rule_id="SYNTAX-PY-COLON",
+                                title=f"Missing Colon ':' at End of Statement",
+                                description=f"Python block statement '{stripped[:40]}' must terminate with a colon ':'.",
+                                line_number=idx,
+                                column_number=len(line) + 1,
+                                suggestion="Append ':' to the end of the header line."
+                            ))
+                        break
 
         return issues
 

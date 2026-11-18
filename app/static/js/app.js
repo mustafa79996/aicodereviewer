@@ -79,13 +79,19 @@ async function loadSamples() {
 }
 
 function setupEventListeners() {
-    // Language change
+    // Language change - preserves user's code if they typed custom code!
     languageSelect.addEventListener("change", (e) => {
         const lang = e.target.value;
-        if (currentSamples[lang]) {
-            sampleSelect.value = lang;
-            codeInput.value = currentSamples[lang];
-            updateLineNumbers();
+        const currentCode = codeInput.value.trim();
+        const isKnownSample = Object.values(currentSamples).some(s => s.trim() === currentCode);
+        
+        // Only switch code to sample if editor is empty or currently holds a sample
+        if (!currentCode || isKnownSample) {
+            if (currentSamples[lang]) {
+                sampleSelect.value = lang;
+                codeInput.value = currentSamples[lang];
+                updateLineNumbers();
+            }
         }
     });
 
@@ -96,6 +102,17 @@ function setupEventListeners() {
             languageSelect.value = (lang === "c" || lang === "cpp") ? "cpp" : lang;
             codeInput.value = currentSamples[lang];
             updateLineNumbers();
+            codeInput.scrollTop = 0;
+            const lineNumContainer = document.getElementById("lineNumbers");
+            if (lineNumContainer) lineNumContainer.scrollTop = 0;
+        }
+    });
+
+    // Synchronize vertical scroll between editor and line numbers
+    codeInput.addEventListener("scroll", () => {
+        const lineNumContainer = document.getElementById("lineNumbers");
+        if (lineNumContainer) {
+            lineNumContainer.scrollTop = codeInput.scrollTop;
         }
     });
 
@@ -560,6 +577,14 @@ function escapeHtml(text) {
 }
 
 function formatMarkdown(md) {
+    if (!md) return "";
+    if (typeof marked !== "undefined" && typeof marked.parse === "function") {
+        try {
+            return marked.parse(md);
+        } catch (e) {
+            console.warn("marked.parse error, using fallback:", e);
+        }
+    }
     return md
         .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-blue-400 mt-3 mb-1">$1</h3>')
         .replace(/^#### (.*$)/gim, '<h4 class="text-xs font-semibold text-slate-300 mt-2 mb-1">$1</h4>')

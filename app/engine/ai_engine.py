@@ -2,7 +2,13 @@ import json
 import logging
 from typing import Optional, Dict, Any, Tuple
 import httpx
-from app.config import OLLAMA_BASE_URL
+from app.config import (
+    OLLAMA_BASE_URL,
+    GEMINI_API_KEY,
+    OPENAI_API_KEY,
+    GROQ_API_KEY,
+    ANTHROPIC_API_KEY
+)
 
 logger = logging.getLogger("ai_code_reviewer")
 
@@ -24,15 +30,38 @@ class AIEngine:
         (ai_insights_markdown, optional_ai_refactored_code)
         """
         provider = (provider or "built-in").lower()
+        key = (api_key or "").strip()
 
-        if provider == "gemini" and api_key:
-            return await self._call_gemini(code, language, api_key, model_name or "gemini-1.5-flash")
-        elif provider == "openai" and api_key:
-            return await self._call_openai(code, language, api_key, model_name or "gpt-4o-mini")
-        elif provider == "groq" and api_key:
-            return await self._call_groq(code, language, api_key, model_name or "llama-3.3-70b-versatile")
+        if provider == "gemini":
+            effective_key = key or GEMINI_API_KEY
+            if effective_key:
+                return await self._call_gemini(code, language, effective_key, model_name or "gemini-1.5-flash")
+            else:
+                insights, _ = self._generate_builtin_insights(code, language)
+                warning = "> ⚠️ **Google Gemini Notice**: No Gemini API Key was supplied. Open **Settings (⚙️)** to configure your key or set the `GEMINI_API_KEY` environment variable. Showing Built-in Analysis below:\n\n"
+                return warning + insights, None
+
+        elif provider == "openai":
+            effective_key = key or OPENAI_API_KEY
+            if effective_key:
+                return await self._call_openai(code, language, effective_key, model_name or "gpt-4o-mini")
+            else:
+                insights, _ = self._generate_builtin_insights(code, language)
+                warning = "> ⚠️ **OpenAI Notice**: No OpenAI API Key was supplied. Open **Settings (⚙️)** to configure your key or set the `OPENAI_API_KEY` environment variable. Showing Built-in Analysis below:\n\n"
+                return warning + insights, None
+
+        elif provider == "groq":
+            effective_key = key or GROQ_API_KEY
+            if effective_key:
+                return await self._call_groq(code, language, effective_key, model_name or "llama-3.3-70b-versatile")
+            else:
+                insights, _ = self._generate_builtin_insights(code, language)
+                warning = "> ⚠️ **Groq Notice**: No Groq API Key was supplied. Open **Settings (⚙️)** to configure your key or set the `GROQ_API_KEY` environment variable. Showing Built-in Analysis below:\n\n"
+                return warning + insights, None
+
         elif provider == "ollama":
             return await self._call_ollama(code, language, ollama_url or OLLAMA_BASE_URL, model_name or "codellama")
+
         else:
             # Built-in offline intelligent code understanding engine
             return self._generate_builtin_insights(code, language)
